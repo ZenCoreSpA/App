@@ -1,0 +1,63 @@
+name: "Tests"
+
+on: [ push ]
+
+jobs:
+
+  php:
+    name: "PHP"
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: MySQL Preparations
+        run: sudo service mysql stop
+
+      - name: Setup MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: "8.0"
+          mysql root password: "secret"
+          mysql database: "app"
+
+      - name: Test MySQL
+        run: |
+          while ! mysqladmin ping --host=127.0.0.1 --password=test --silent; do
+            sleep 1
+          done
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Enviroment Setup
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Install Dependencies
+        run: |
+          composer install --prefer-dist
+      - name: Instance Setup
+        run: php artisan key:generate
+
+      - name: Run PHP Tests
+        run: php artisan test
+
+  js:
+    name: "JS"
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: install
+
+      - name: Build
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: build
